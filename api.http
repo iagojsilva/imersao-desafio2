@@ -1,0 +1,12 @@
+
+POST http://localhost:8080/routes HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Rua XV",
+    "source": {"lat": 46, "lng": 45},
+    "destination": {"lat": 46, "lng": 42}
+}
+
+###
+GET http://localhost:8080/routes HTTP/1.1
