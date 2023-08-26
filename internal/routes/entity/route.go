@@ -12,14 +12,28 @@ func NewCoords(lat uint8, lng uint8) *Coords {
 	}
 }
 
-type Route struct {
-	ID          string
-	Name        string
-	Source      *Coords
-	Destination *Coords
+type RawRoute struct {
+	Name        string  `json:"name"`
+	Source      *Coords `json:"source"`
+	Destination *Coords `json:"destination"`
 }
 
-func NewRoute(id string, name string, source *Coords, destination *Coords) *Route {
+func NewRawRoute(name string, source *Coords, destination *Coords) *RawRoute {
+	return &RawRoute{
+		Name:        name,
+		Source:      source,
+		Destination: destination,
+	}
+}
+
+type Route struct {
+	ID          int
+	Name        string  `json:"name"`
+	Source      *Coords `json:"source"`
+	Destination *Coords `json:"destination"`
+}
+
+func NewRoute(id int, name string, source *Coords, destination *Coords) *Route {
 	return &Route{
 		ID:          id,
 		Name:        name,
@@ -30,5 +44,5 @@ func NewRoute(id string, name string, source *Coords, destination *Coords) *Rout
 
 type RouteRepository interface {
 	FindAll() ([]*Route, error)
-	CreateRoute(route *Route) error
+	CreateRoute(route *RawRoute) error
 }
