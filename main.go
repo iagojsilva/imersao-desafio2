@@ -20,7 +20,7 @@ func main() {
 
 	count := 1
 
-	db, sqlCoonectError := sql.Open("mysql", "root:root@tcp(localhost:3306)/routes")
+	db, sqlCoonectError := sql.Open("mysql", "root:root@tcp(mysql)/routes")
 
 	if sqlCoonectError != nil {
 		panic(sqlCoonectError)
