@@ -2,16 +2,24 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"encoding/json"
+	"io"
+	"strings"
 
-	"github.com/google/uuid"
+	"net/http"
+
 	"github.com/iagojsilva/imersao-desafio2/internal/routes/entity"
 	"github.com/iagojsilva/imersao-desafio2/internal/routes/infra/repository"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
+
+	count := 1
+
 	db, sqlCoonectError := sql.Open("mysql", "root:root@tcp(localhost:3306)/routes")
 
 	if sqlCoonectError != nil {
@@ -20,23 +28,46 @@ func main() {
 
 	routeRepository := repository.NewRouteRepository(db)
 
-	source := entity.NewCoords(46, 57)
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Get("/routes", func(w http.ResponseWriter, r *http.Request) {
+		routesStruct, err := routeRepository.FindAll()
 
-	destination := entity.NewCoords(42, 57)
+		if err != nil {
+			http.Error(w, "Could not fetch routes", http.StatusBadRequest)
+			return
+		}
 
-	route := entity.NewRoute(uuid.NewString(), "my route", source, destination)
+		routesJSON, _ := json.Marshal(routesStruct)
+		w.Write([]byte(routesJSON))
+	})
 
-	err := routeRepository.Create(route)
+	r.Post("/routes", func(w http.ResponseWriter, r *http.Request) {
+		var rawRoute *entity.RawRoute
+		body, _ := io.ReadAll(r.Body)
 
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Route created", route)
+		err := json.NewDecoder(strings.NewReader(string(body))).Decode(&rawRoute)
 
-	routes, findAllError := routeRepository.FindAll()
+		if err != nil {
+			http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+			return
+		}
 
-	if findAllError != nil {
-		panic(findAllError)
-	}
-	fmt.Println(routes)
+		route, err := routeRepository.Create(rawRoute, count)
+
+		if err != nil {
+			http.Error(w, "Could not create route", http.StatusInternalServerError)
+			return
+		}
+
+		count++
+
+		routeJSON, _ := json.Marshal(route)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(routeJSON)
+	})
+	println("Listening at 8080")
+
+	http.ListenAndServe(":8080", r)
 }
