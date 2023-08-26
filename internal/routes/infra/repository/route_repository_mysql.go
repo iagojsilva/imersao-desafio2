@@ -17,7 +17,7 @@ func NewRouteRepository(db *sql.DB) *RouteRepositoryMysql {
 	}
 }
 
-func (r *RouteRepositoryMysql) Create(route *entity.Route) error {
+func (r *RouteRepositoryMysql) Create(route *entity.RawRoute, id int) (*entity.Route, error) {
 
 	sourceJSON, sourceJsonErr := json.Marshal(route.Source)
 	destinationJSON, destJsonErr := json.Marshal(route.Destination)
@@ -25,14 +25,15 @@ func (r *RouteRepositoryMysql) Create(route *entity.Route) error {
 	if sourceJsonErr != nil || destJsonErr != nil {
 		panic("sourceJsonErr, destJsonErr has an error")
 	}
-
 	query := "INSERT INTO routes (id, name, source, destination) VALUES (?, ?, ?, ?);"
-	_, err := r.db.Exec(query, route.ID, route.Name, sourceJSON, destinationJSON)
+	_, err := r.db.Exec(query, id, route.Name, sourceJSON, destinationJSON)
+
+	createdRoute := entity.NewRoute(id, route.Name, route.Source, route.Destination)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return createdRoute, nil
 }
 
 func (r *RouteRepositoryMysql) FindAll() (*[]entity.Route, error) {
